@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>授权码管理后台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 30px;
+  }
+  .header h1 {
+    color: #2d5a27;
+    font-size: 28px;
+  }
+  .header p {
+    color: #5a8a52;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  .login-box {
+    max-width: 400px;
+    margin: 30px auto;
+    background: white;
+    padding: 40px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  }
+  .login-box h2 {
+    text-align: center;
+    color: #2d5a27;
+    margin-bottom: 20px;
+  }
+  .login-box input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+  .login-box input:focus {
+    border-color: #a8e6cf;
+  }
+  .login-box button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fdcb2 100%);
+    color: #2d5a27;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .login-box button:hover {
+    transform: translateY(-2px);
+  }
+  .error {
+    color: #e74c3c;
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  .main {
+    display: none;
+  }
+  .main.active {
+    display: block;
+  }
+  .toolbar {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .toolbar button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fdcb2 100%);
+    color: #2d5a27;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .toolbar button.logout {
+    background: #f0f0f0;
+    color: #666;
+  }
+  .tabs {
+    display: flex;
+    background: white;
+    border-radius: 16px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .tab {
+    flex: 1;
+    padding: 15px;
+    background: transparent;
+    border: none;
+    font-size: 14px;
+    color: #666;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fdcb2 100%);
+    color: #2d5a27;
+    font-weight: bold;
+  }
+  .danger-btn {
+    padding: 10px 20px;
+    background: #ffebee;
+    color: #c62828;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .danger-btn:hover {
+    background: #ffcdd2;
+  }
+  .logout-bar {
+    margin-top: 20px;
+    text-align: center;
+  }
+  .logout-bar button {
+    padding: 10px 20px;
+    background: #f0f0f0;
+    color: #666;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  .key-info {
+    background: #fff3e0;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    border: 2px dashed #ffb74d;
+  }
+  .key-label {
+    font-size: 14px;
+    color: #e65100;
+    margin-bottom: 5px;
+  }
+  .key-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #bf360c;
+    font-family: monospace;
+    letter-spacing: 3px;
+  }
+  .key-hint {
+    font-size: 12px;
+    color: #888;
+    margin-top: 5px;
+  }
+  .device-card {
+    background: white;
+    border-radius: 16px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .device-info {
+    flex: 1;
+  }
+  .device-id {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
+    font-family: monospace;
+  }
+  .device-time {
+    font-size: 12px;
+    color: #999;
+    margin-top: 3px;
+  }
+  .stats {
+    color: #5a8a52;
+    font-size: 14px;
+  }
+  .site-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+  }
+  .site-card:hover {
+    transform: translateY(-2px);
+  }
+  .site-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  .site-icon {
+    font-size: 32px;
+    margin-right: 12px;
+  }
+  .site-info {
+    flex: 1;
+  }
+  .site-name {
+    font-size: 18px;
+    font-weight: bold;
+    color: #2d5a27;
+  }
+  .site-id {
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+  }
+  .site-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-edit {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+  .btn-edit:hover {
+    background: #bbdefb;
+  }
+  .btn-reset {
+    background: #fff3e0;
+    color: #e65100;
+  }
+  .btn-reset:hover {
+    background: #ffe0b2;
+  }
+  .btn-delete {
+    background: #ffebee;
+    color: #c62828;
+  }
+  .btn-delete:hover {
+    background: #ffcdd2;
+  }
+  .site-code {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .code-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 3px;
+  }
+  .code-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #2d5a27;
+    font-family: monospace;
+    letter-spacing: 2px;
+  }
+  .code-copy {
+    padding: 6px 12px;
+    background: #a8e6cf;
+    color: #2d5a27;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .site-link {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #666;
+  }
+  .site-link a {
+    color: #2d5a27;
+    text-decoration: none;
+    word-break: break-all;
+  }
+  .site-link a:hover {
+    text-decoration: underline;
+  }
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal.active {
+    display: flex;
+  }
+  .modal-content {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+  }
+  .modal h3 {
+    color: #2d5a27;
+    margin-bottom: 20px;
+  }
+  .modal label {
+    display: block;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 5px;
+  }
+  .modal input, .modal select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus {
+    border-color: #a8e6cf;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-cancel {
+    background: #f5f5f5;
+    color: #666;
+  }
+  .btn-save {
+    background: linear-gradient(135deg, #a8e6cf 0%, #7fdcb2 100%);
+    color: #2d5a27;
+    font-weight: bold;
+  }
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 2000;
+  }
+  .toast.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>🦊 授权码管理后台</h1>
+    <p>每个网站一个固定授权码，简单高效</p>
+  </div>
+
+  <!-- 登录页 -->
+  <div id="loginBox" class="login-box">
+    <h2>管理员登录</h2>
+    <input type="password" id="passwordInput" placeholder="请输入管理员密码">
+    <button onclick="login()">登 录</button>
+    <div id="loginError" class="error"></div>
+  </div>
+
+  <!-- 主页面 -->
+  <div id="main" class="main">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('sites')">网站管理</button>
+      <button class="tab" onclick="switchTab('devices')">设备绑定</button>
+    </div>
+    
+    <!-- 网站管理 -->
+    <div id="sitesTab">
+      <div class="toolbar">
+        <div class="stats">
+          共 <span id="siteCount">0</span> 个网站
+        </div>
+        <div>
+          <button onclick="showAddModal()">+ 添加网站</button>
+        </div>
+      </div>
+      <div id="siteList"></div>
+    </div>
+    
+    <!-- 设备绑定管理 -->
+    <div id="devicesTab" style="display:none;">
+      <div class="toolbar">
+        <div class="stats">
+          已绑定 <span id="deviceCount">0</span> 台设备
+        </div>
+        <div>
+          <button class="danger-btn" onclick="clearAllBindings()">清除所有绑定</button>
+        </div>
+      </div>
+      <div class="key-info">
+        <div class="key-label">🔐 绑定密钥</div>
+        <div class="key-value">DEVICE_BIND_2024</div>
+        <div class="key-hint">用户首次使用时需要输入此密钥来绑定设备</div>
+      </div>
+      <div id="deviceList"></div>
+    </div>
+  </div>
+  <div class="logout-bar">
+    <button class="logout" onclick="logout()">退出登录</button>
+  </div>
+</div>
+
+<!-- 添加/编辑网站弹窗 -->
+<div id="siteModal" class="modal">
+  <div class="modal-content">
+    <h3 id="modalTitle">添加网站</h3>
+    <label>网站ID（英文，如 animal）</label>
+    <input type="text" id="siteId" placeholder="animal" disabled>
+    
+    <label>网站名称</label>
+    <input type="text" id="siteName" placeholder="动物塑测评">
+    
+    <label>网站图标（emoji）</label>
+    <input type="text" id="siteIcon" placeholder="🦊" maxlength="2">
+    
+    <label>授权码</label>
+    <input type="text" id="siteCode" placeholder="8位字母数字">
+    
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">取消</button>
+      <button class="btn-save" onclick="saveSite()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast提示 -->
+<div id="toast" class="toast"></div>
+
+<script>
+// API 配置 - 支持通过 URL 参数 ?api= 指定后端地址
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const API_BASE = URL_PARAMS.get("api") || "";
+console.log("管理后台 API:", API_BASE || "(相对路径)");
+
+let authToken = localStorage.getItem("admin_token");
+let editingSiteId = null;
+
+// 检查登录状态
+if (authToken) {
+  document.getElementById("loginBox").style.display = "none";
+  document.getElementById("main").classList.add("active");
+  loadSites().catch(() => {
+    // 如果加载失败（token过期等），清除token并显示登录页
+    localStorage.removeItem("admin_token");
+    location.reload();
+  });
+}
+async function login() {
+  const password = document.getElementById("passwordInput").value;
+  const errorEl = document.getElementById("loginError");
+  
+  try {
+    const res = await fetch(API_BASE + "/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password })
+    });
+    
+    const data = await res.json();
+    
+    if (data.ok) {
+      authToken = data.token;
+      localStorage.setItem("admin_token", authToken);
+      document.getElementById("loginBox").style.display = "none";
+      document.getElementById("main").classList.add("active");
+      loadSites();
+    } else {
+      errorEl.textContent = data.msg || "登录失败";
+    }
+  } catch (e) {
+    errorEl.textContent = "网络错误";
+  }
+}
+
+function logout() {
+  localStorage.removeItem("admin_token");
+  authToken = null;
+  document.getElementById("loginBox").style.display = "block";
+  document.getElementById("main").classList.remove("active");
+}
+
+async function loadSites() {
+  try {
+    const res = await fetch(API_BASE + "/api/sites", {
+      headers: { "Authorization": "Bearer " + authToken }
+    });
+    const data = await res.json();
+    
+    if (!data.ok) {
+      logout();
+      return;
+    }
+    
+    const sites = data.data;
+    document.getElementById("siteCount").textContent = sites.length;
+    
+    const listEl = document.getElementById("siteList");
+    
+    if (sites.length === 0) {
+      listEl.innerHTML = '<div class="empty">暂无网站，点击「添加网站」创建第一个</div>';
+      return;
+    }
+    
+    listEl.innerHTML = sites.map(site => `
+      <div class="site-card">
+        <div class="site-header">
+          <div class="site-icon">${site.icon || "📄"}</div>
+          <div class="site-info">
+            <div class="site-name">${site.name}</div>
+            <div class="site-id">ID: ${site.id}</div>
+          </div>
+          <div class="site-actions">
+            <button class="btn btn-edit" onclick="editSite('${site.id}')">编辑</button>
+            <button class="btn btn-reset" onclick="resetCode('${site.id}')">重置码</button>
+            <button class="btn btn-delete" onclick="deleteSite('${site.id}')">删除</button>
+          </div>
+        </div>
+        <div class="site-code">
+          <div>
+            <div class="code-label">授权码</div>
+            <div class="code-value" id="code-${site.id}">${site.code}</div>
+          </div>
+          <button class="code-copy" onclick="copyCode('${site.id}')">复制</button>
+        </div>
+        <div class="site-link">
+          测评链接: <a href="?site=${site.id}" target="_blank">当前域名/?site=${site.id}</a>
+        </div>
+      </div>
+    `).join("");
+  } catch (e) {
+    showToast("加载失败");
+  }
+}
+
+function showAddModal() {
+  editingSiteId = null;
+  document.getElementById("modalTitle").textContent = "添加网站";
+  document.getElementById("siteId").value = "";
+  document.getElementById("siteId").disabled = false;
+  document.getElementById("siteName").value = "";
+  document.getElementById("siteIcon").value = "📄";
+  document.getElementById("siteCode").value = "";
+  document.getElementById("siteModal").classList.add("active");
+}
+
+function editSite(id) {
+  editingSiteId = id;
+  // 从页面获取当前值
+  const codeEl = document.getElementById("code-" + id);
+  const siteCard = codeEl.closest(".site-card");
+  const nameEl = siteCard.querySelector(".site-name").textContent;
+  const iconEl = siteCard.querySelector(".site-icon").textContent;
+  
+  document.getElementById("modalTitle").textContent = "编辑网站";
+  document.getElementById("siteId").value = id;
+  document.getElementById("siteId").disabled = true;
+  document.getElementById("siteName").value = nameEl;
+  document.getElementById("siteIcon").value = iconEl;
+  document.getElementById("siteCode").value = codeEl.textContent;
+  document.getElementById("siteModal").classList.add("active");
+}
+
+function closeModal() {
+  document.getElementById("siteModal").classList.remove("active");
+}
+
+async function saveSite() {
+  const id = document.getElementById("siteId").value.trim();
+  const name = document.getElementById("siteName").value.trim();
+  const icon = document.getElementById("siteIcon").value.trim() || "📄";
+  const code = document.getElementById("siteCode").value.trim().toUpperCase();
+  
+  if (!id || !name) {
+    showToast("请填写完整信息");
+    return;
+  }
+  
+  try {
+    let res;
+    if (editingSiteId) {
+      // 更新
+      res = await fetch(API_BASE + "/api/sites/" + editingSiteId, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + authToken
+        },
+        body: JSON.stringify({ name, icon, code })
+      });
+    } else {
+      // 创建
+      res = await fetch(API_BASE + "/api/sites", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + authToken
+        },
+        body: JSON.stringify({ id, name, icon, code })
+      });
+    }
+    
+    const data = await res.json();
+    if (data.ok) {
+      showToast("保存成功");
+      closeModal();
+      loadSites();
+    } else {
+      showToast(data.msg || "保存失败");
+    }
+  } catch (e) {
+    showToast("网络错误");
+  }
+}
+
+async function resetCode(id) {
+  if (!confirm("确定要重置授权码吗？")) return;
+  
+  try {
+    const res = await fetch(API_BASE + "/api/sites/" + id + "/reset-code", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + authToken }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("已重置为: " + data.data.code);
+      loadSites();
+    } else {
+      showToast(data.msg || "重置失败");
+    }
+  } catch (e) {
+    showToast("网络错误");
+  }
+}
+
+async function deleteSite(id) {
+  if (!confirm("确定要删除这个网站吗？此操作不可恢复！")) return;
+  
+  try {
+    const res = await fetch(API_BASE + "/api/sites/" + id, {
+      method: "DELETE",
+      headers: { "Authorization": "Bearer " + authToken }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("已删除");
+      loadSites();
+    } else {
+      showToast(data.msg || "删除失败");
+    }
+  } catch (e) {
+    showToast("网络错误");
+  }
+}
+
+function copyCode(id) {
+  const codeEl = document.getElementById("code-" + id);
+  const text = codeEl.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("已复制: " + text);
+  });
+}
+
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+// 回车登录
+document.getElementById("passwordInput")?.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") login();
+});
+
+// Tab切换
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#sitesTab, #devicesTab').forEach(t => t.style.display = 'none');
+  
+  if (tab === 'sites') {
+    document.querySelectorAll('.tab')[0].classList.add('active');
+    document.getElementById('sitesTab').style.display = 'block';
+  } else {
+    document.querySelectorAll('.tab')[1].classList.add('active');
+    document.getElementById('devicesTab').style.display = 'block';
+    loadDevices();
+  }
+}
+
+// 加载已绑定设备
+async function loadDevices() {
+  try {
+    const res = await fetch(API_BASE + "/api/devices", {
+      headers: { "Authorization": "Bearer " + authToken }
+    });
+    const data = await res.json();
+    
+    if (!data.ok) {
+      showToast(data.msg || "加载失败");
+      return;
+    }
+    
+    document.getElementById("deviceCount").textContent = data.total;
+    
+    const listEl = document.getElementById("deviceList");
+    
+    if (data.data.length === 0) {
+      listEl.innerHTML = '<div class="empty">暂无绑定设备</div>';
+      return;
+    }
+    
+    listEl.innerHTML = data.data.map(device => `
+      <div class="device-card">
+        <div class="device-info">
+          <div class="device-id">设备: ${device.deviceLabel}</div>
+          <div class="device-time">绑定时间: ${new Date(device.boundAt).toLocaleString('zh-CN')}</div>
+        </div>
+        <button class="btn btn-delete" onclick="unbindDevice('${device.id}')">解除绑定</button>
+      </div>
+    `).join("");
+  } catch (e) {
+    showToast("加载失败");
+  }
+}
+
+// 解除设备绑定
+async function unbindDevice(hashId) {
+  if (!confirm("确定要解除此设备的绑定吗？该设备将无法访问。")) return;
+  
+  try {
+    const res = await fetch(API_BASE + "/api/devices/unbind", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + authToken
+      },
+      body: JSON.stringify({ deviceId: hashId + "dummy" })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("已解除绑定");
+      loadDevices();
+    } else {
+      showToast(data.msg || "操作失败");
+    }
+  } catch (e) {
+    showToast("网络错误");
+  }
+}
+
+// 清除所有绑定
+async function clearAllBindings() {
+  if (!confirm("确定要清除所有设备绑定吗？所有已绑定的设备都将无法访问！")) return;
+  
+  try {
+    const res = await fetch(API_BASE + "/api/devices/clear-all", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + authToken }
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("已清除所有绑定");
+      loadDevices();
+    } else {
+      showToast(data.msg || "操作失败");
+    }
+  } catch (e) {
+    showToast("网络错误");
+  }
+}
+</script>
+
+</body>
+</html>

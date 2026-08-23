@@ -1,0 +1,10 @@
+node_modules/
+data/
+*.log
+.env
+.env.local
+deploy-v2.zip
+dwpp-deploy.zip
+.trae-html-share-packages/
+.DS_Store
+Thumbs.db
