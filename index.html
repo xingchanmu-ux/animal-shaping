@@ -951,10 +951,9 @@ body::after {
 
 // ===== API 配置 =====
 // 部署到 Railway 后，将下面的 URL 改为你的后端地址
-// 例如: const API_BASE = "https://your-app.up.railway.app";
 const API_BASE = window.location.hostname === "localhost" 
   ? ""  // 本地开发时使用相对路径
-  : ""; // 生产环境留空，通过 URL 参数 ?api= 指定
+  : "https://animal-shaping-production.up.railway.app"; // 生产环境后端地址
 
 // 从 URL 参数获取 API 地址 (可选)
 const URL_PARAMS = new URLSearchParams(window.location.search);
