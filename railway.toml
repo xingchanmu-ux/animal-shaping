@@ -1,0 +1,25 @@
+[build]
+builder = "Nixpacks"
+
+[build.provides]
+  - "nodejs"
+
+[build.nixpacks]
+  nodejs = "20"
+
+[start]
+  command = "node server.js"
+
+[[env]]
+  name = "PORT"
+  value = "$PORT"
+
+[[env]]
+  name = "ADMIN_PASSWORD"
+  value = "admin888"
+  description = "管理员密码"
+
+[[env]]
+  name = "DEVICE_BIND_KEY"
+  value = "DEVICE_BIND_2024"
+  description = "设备绑定密钥"
