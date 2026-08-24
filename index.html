@@ -737,6 +737,13 @@ body::after {
 </style>
 </head>
 <body>
+  <script>
+    if (!new URLSearchParams(location.search).get('site') && !location.search.includes('site=')) {
+      const p = new URLSearchParams(location.search);
+      p.set('site', 'animal');
+      location.replace(location.pathname + '?' + p.toString() + location.hash);
+    }
+  </script>
   <div class="app">
 
     <section id="page-home" class="page active">
