@@ -1,7 +1,11 @@
 [build]
-builder = "Dockerfile"
+builder = "Nixpacks"
+
+[build.nixpacks]
+nodejs = "20"
 
 [deploy]
+startCommand = "node server.js"
 healthcheckPath = "/api/health"
 restartPolicyType = "on_failure"
 numReplicas = 1
