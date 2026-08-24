@@ -1,0 +1,16 @@
+name = "animal-shaping-auth"
+main = "worker.js"
+compatibility_date = "2024-09-01"
+
+# Cloudflare KV 绑定：存"码 → 设备ID"绑定关系
+# 首次部署前，请先在 Cloudflare 控制台或用命令创建 KV namespace：
+#   npx wrangler kv namespace create ANIMAL_CODES
+# 然后把返回的 id 填到下方 id 字段
+[[kv_namespaces]]
+binding = "ANIMAL_CODES"
+id = "在此填入你的_KV_namespace_id"
+
+# 部署命令：
+#   npx wrangler deploy
+# 本地开发：
+#   npx wrangler dev

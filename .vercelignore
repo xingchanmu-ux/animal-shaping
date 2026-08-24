@@ -1,0 +1,11 @@
+# Vercel 只托管静态前端文件，忽略所有后端相关文件
+server.js
+package.json
+package-lock.json
+Dockerfile
+railway.toml
+db.json
+db.backup.json
+node_modules/
+.git/
+.trae/

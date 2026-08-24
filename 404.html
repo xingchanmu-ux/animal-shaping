@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>跳转中… · 动物塑测评</title>
+<script>
+  // GitHub Pages 兼容的短链路由（等价于 Netlify 的 _redirects）
+  // 规则：
+  //   /        -> /animal
+  //   /animal  -> /index.html?site=animal
+  //   /xxx     -> /index.html?site=xxx   （支持以后新增 mbti/color 等）
+  (function () {
+    var loc = window.location;
+    var path = (loc.pathname || "/").replace(/^https?:\/\/[^/]+/, "");
+    // 适配 GitHub Pages 仓库子路径：/animal-shaping/xxx
+    var repoPath = "/";
+    if (/^\/[^/]+\//.test(path)) {
+      // 尝试拿第一段当仓库名（比如 /animal-shaping/animal），但实际短链走自定义域名时不用
+    }
+    var qs = (loc.search || "");
+    var hash = (loc.hash || "");
+
+    var p = (path || "/").split("?")[0];
+    // 去掉末尾 index.html
+    p = p.replace(/\/index\.html$/, "/");
+    // 把连续斜杠归一成一个
+    p = p.replace(/\/+/g, "/");
+
+    var site = null;
+    if (p === "/" || p === "") {
+      // 根路径 -> 跳 /animal 短链
+      loc.replace(loc.origin + repoPath + "animal" + qs + hash);
+      return;
+    }
+    // /animal /mbti /color 这类 -> 去尾斜杠后当 siteId
+    var m = p.match(/^\/?([a-zA-Z0-9_-]{1,64})\/?$/);
+    if (m) {
+      site = m[1];
+      loc.replace(loc.origin + repoPath + "index.html" + (qs ? qs + "&" : "?") + "site=" + encodeURIComponent(site) + hash);
+      return;
+    }
+    // 都不匹配，提示用户用完整链接
+  })();
+</script>
+</head>
+<body>
+<p>正在跳转… 如果没反应，请手动访问：<a href="/index.html?site=animal">/index.html?site=animal</a></p>
+</body>
+</html>

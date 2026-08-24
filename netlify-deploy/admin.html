@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>授权码管理后台</title>
+  <style>
+:root {
+  --bg: #f4faf6;
+  --bg-2: #e6f4ec;
+  --card: #ffffff;
+  --primary: #7bc49a;
+  --primary-dark: #5aa87c;
+  --primary-soft: #e0f2e8;
+  --primary-deep: #3d8a5e;
+  --accent: #a8c5e8;
+  --ink: #3d4a42;
+  --ink-soft: #8a9a8e;
+  --line: #d8ead5;
+  --shadow: 0 8px 30px rgba(122, 196, 154, 0.12);
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(170deg, #f4faf6 0%, #e6f4ec 100%);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { padding: 16px; }
+
+.auth-screen {
+  max-width: 400px;
+  margin: 60px auto;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 40px 28px;
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.auth-screen h1 {
+  font-size: 22px;
+  margin: 0 0 8px;
+  color: var(--primary-deep);
+}
+
+.auth-screen p {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin: 0 0 24px;
+}
+
+.auth-screen input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  font-size: 16px;
+  outline: none;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.auth-screen input:focus { border-color: var(--primary); }
+
+.auth-screen .btn-login {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.auth-screen .btn-login:active { transform: scale(0.98); }
+
+.auth-screen .error {
+  color: #d05050;
+  font-size: 13px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.dashboard { display: none; }
+
+.dashboard.show { display: block; }
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.header h1 {
+  font-size: 20px;
+  margin: 0;
+  color: var(--primary-deep);
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+}
+
+.btn-primary:hover { transform: translateY(-1px); }
+
+.btn-secondary {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+}
+
+.btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.add-site-form {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+  display: none;
+}
+
+.add-site-form.show { display: block; }
+
+.add-site-form h3 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: var(--primary-deep);
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus { border-color: var(--primary); }
+
+.sites-list {
+  display: grid;
+  gap: 16px;
+}
+
+.site-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.site-info h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  color: var(--ink);
+}
+
+.site-info .site-id {
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-family: monospace;
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.site-info .site-prefix {
+  font-size: 12px;
+  color: var(--primary-deep);
+  margin-top: 4px;
+}
+
+.site-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+  background: var(--primary-soft);
+  padding: 12px 20px;
+  border-radius: 10px;
+  min-width: 80px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary-deep);
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.site-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.generate-section {
+  background: var(--bg-2);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.generate-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.generate-row input {
+  width: 100px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.generate-result {
+  margin-top: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  display: none;
+}
+
+.generate-result.show { display: block; }
+
+.generate-result .codes-list {
+  font-family: monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--ink);
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.codes-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.codes-table th,
+.codes-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+
+.codes-table th {
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  font-weight: 600;
+}
+
+.codes-table .status-used { color: #dc2626; }
+.codes-table .status-free { color: var(--primary-deep); }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal.show { display: flex; }
+
+.modal-content {
+  background: white;
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-title {
+  font-size: 18px;
+  margin: 0 0 16px;
+  color: var(--primary-deep);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-actions .btn { flex: 1; justify-content: center; }
+
+.search-box {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-2);
+  padding: 4px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: all 0.2s;
+}
+
+.tab.active {
+  background: white;
+  color: var(--primary-deep);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: rgba(40, 60, 50, 0.92);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  z-index: 200;
+  transition: transform 0.3s;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+.code-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-soft);
+  color: var(--primary-deep);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  margin: 4px;
+}
+
+.code-item .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.code-item.used {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.code-item.used .status-dot { background: #dc2626; }
+  </style>
+</head>
+<body>
+
+<!-- 登录界面 -->
+<div id="auth-screen" class="auth-screen">
+  <h1>🔐 授权码管理后台</h1>
+  <p>管理多个测评网站的授权码</p>
+  <div id="auth-error" class="error"></div>
+  <input id="auth-password" type="password" placeholder="请输入管理员密码" autocomplete="off" />
+  <button id="auth-submit" class="btn-login">进入管理后台</button>
+</div>
+
+<!-- 主后台 -->
+<div id="dashboard" class="dashboard">
+  <div class="header">
+    <h1>📊 授权码管理中心</h1>
+    <div>
+      <button id="btn-add-site" class="btn btn-primary">+ 添加网站</button>
+      <button id="btn-logout" class="btn btn-ghost">退出</button>
+    </div>
+  </div>
+
+  <!-- 添加网站表单 -->
+  <div id="add-site-form" class="add-site-form">
+    <h3>➕ 添加新网站</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>网站名称（如：动物塑）</label>
+        <input id="site-name" type="text" placeholder="请输入网站名称" />
+      </div>
+      <div class="form-group">
+        <label>网站标识ID（英文）</label>
+        <input id="site-id" type="text" placeholder="如：animal" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>授权码前缀</label>
+        <input id="site-prefix" type="text" placeholder="如：AS" maxlength="4" />
+      </div>
+      <div class="form-group">
+        <label>码长（不含前缀）</label>
+        <select id="site-length">
+          <option value="6">6位</option>
+          <option value="8" selected>8位</option>
+          <option value="10">10位</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>图标（emoji）</label>
+        <input id="site-icon" type="text" placeholder="🦊" maxlength="4" />
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <button id="btn-save-site" class="btn btn-primary">保存</button>
+      <button id="btn-cancel-site" class="btn btn-ghost">取消</button>
+    </div>
+  </div>
+
+  <!-- 网站列表 -->
+  <div id="sites-list" class="sites-list"></div>
+
+  <div id="empty-state" class="empty-state">
+    <div class="icon">📝</div>
+    <div>还没有添加任何网站</div>
+    <div style="margin-top: 8px; font-size: 13px;">点击上方「添加网站」开始管理</div>
+  </div>
+</div>
+
+<!-- 查看授权码模态框 -->
+<div id="codes-modal" class="modal">
+  <div class="modal-content">
+    <h3 class="modal-title">📋 授权码列表</h3>
+    <div class="search-box">
+      <input id="search-code" type="text" placeholder="🔍 搜索授权码或绑定信息" />
+    </div>
+    <div id="codes-container"></div>
+    <div class="modal-actions">
+      <button id="btn-export-codes" class="btn btn-primary">导出全部</button>
+      <button id="btn-close-codes" class="btn btn-ghost">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认删除模态框 -->
+<div id="confirm-modal" class="modal">
+  <div class="modal-content">
+    <h3 class="modal-title" id="confirm-title">确认操作</h3>
+    <p id="confirm-message" style="color: var(--ink-soft); margin: 0 0 20px;"></p>
+    <div class="modal-actions">
+      <button id="btn-confirm-cancel" class="btn btn-ghost">取消</button>
+      <button id="btn-confirm-ok" class="btn btn-primary">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
+<script>
+(function() {
+  const ADMIN_PASSWORD = "admin888";
+  const SITES_KEY = "admin_sites";
+  const BIND_KEY_PREFIX = "bind_";
+  const CODE_POOL_KEY_PREFIX = "code_pool_";
+  
+  const $ = (s) => document.querySelector(s);
+  const $$ = (s) => document.querySelectorAll(s);
+  
+  function toast(msg) {
+    const el = $("#toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 1800);
+  }
+  
+  function getSites() {
+    try {
+      return JSON.parse(localStorage.getItem(SITES_KEY) || "[]");
+    } catch (e) { return []; }
+  }
+  
+  function saveSites(sites) {
+    try {
+      localStorage.setItem(SITES_KEY, JSON.stringify(sites));
+    } catch (e) { }
+  }
+  
+  function getCodePool(siteId) {
+    try {
+      return JSON.parse(localStorage.getItem(CODE_POOL_KEY_PREFIX + siteId) || "[]");
+    } catch (e) { return []; }
+  }
+  
+  function saveCodePool(siteId, pool) {
+    try {
+      localStorage.setItem(CODE_POOL_KEY_PREFIX + siteId, JSON.stringify(pool));
+    } catch (e) { }
+  }
+  
+  function getBindMap(siteId) {
+    try {
+      return JSON.parse(localStorage.getItem(BIND_KEY_PREFIX + siteId) || "{}");
+    } catch (e) { return {}; }
+  }
+  
+  function saveBindMap(siteId, map) {
+    try {
+      localStorage.setItem(BIND_KEY_PREFIX + siteId, JSON.stringify(map));
+    } catch (e) { }
+  }
+  
+  function generateCode(prefix, length) {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let code = prefix;
+    for (let i = 0; i < length; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return code;
+  }
+  
+  function hashStr(s) {
+    let h1 = 0xdeadbeef ^ s.length, h2 = 0x41c6ce57 ^ s.length;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+    h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+    h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  }
+  
+  function getDeviceId() {
+    try {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.textBaseline = "top";
+      ctx.font = "14px Arial";
+      ctx.fillStyle = "#f60";
+      ctx.fillRect(10, 5, 60, 20);
+      ctx.fillStyle = "#069";
+      ctx.fillText("admin-center", 2, 2);
+      const canvasStr = canvas.toDataURL().length.toString(36);
+      const ua = navigator.userAgent;
+      const screen = `${screen.width}x${screen.height}`;
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const raw = `${ua}|${screen}|${tz}|${canvasStr}`;
+      return hashStr(raw);
+    } catch (e) {
+      return hashStr(navigator.userAgent + Date.now());
+    }
+  }
+  
+  // 登录逻辑
+  function initAuth() {
+    $("#auth-submit").addEventListener("click", () => {
+      const pwd = $("#auth-password").value;
+      if (pwd === ADMIN_PASSWORD) {
+        const token = getDeviceId();
+        sessionStorage.setItem("admin_token", token);
+        showDashboard();
+      } else {
+        $("#auth-error").textContent = "密码错误，请重试";
+        $("#auth-error").style.display = "block";
+      }
+    });
+    
+    $("#auth-password").addEventListener("keypress", (e) => {
+      if (e.key === "Enter") $("#auth-submit").click();
+    });
+  }
+  
+  function showDashboard() {
+    $("#auth-screen").style.display = "none";
+    $("#dashboard").classList.add("show");
+    renderSites();
+  }
+  
+  function checkAuth() {
+    const token = sessionStorage.getItem("admin_token");
+    if (token) {
+      showDashboard();
+    }
+  }
+  
+  function logout() {
+    sessionStorage.removeItem("admin_token");
+    $("#dashboard").classList.remove("show");
+    $("#auth-screen").style.display = "block";
+    $("#auth-password").value = "";
+  }
+  
+  // 网站管理
+  function initSiteManagement() {
+    $("#btn-add-site").addEventListener("click", () => {
+      const form = $("#add-site-form");
+      if (form.classList.contains("show")) {
+        form.classList.remove("show");
+        $("#site-name").value = "";
+        $("#site-id").value = "";
+        $("#site-prefix").value = "";
+        $("#site-icon").value = "";
+      } else {
+        form.classList.add("show");
+      }
+    });
+    
+    $("#btn-cancel-site").addEventListener("click", () => {
+      $("#add-site-form").classList.remove("show");
+      $("#site-name").value = "";
+      $("#site-id").value = "";
+      $("#site-prefix").value = "";
+      $("#site-icon").value = "";
+    });
+    
+    $("#btn-save-site").addEventListener("click", () => {
+      const name = $("#site-name").value.trim();
+      const id = $("#site-id").value.trim().toLowerCase();
+      const prefix = $("#site-prefix").value.trim().toUpperCase();
+      const length = parseInt($("#site-length").value);
+      const icon = $("#site-icon").value.trim() || "📄";
+      
+      if (!name || !id) {
+        toast("请填写网站名称和标识ID");
+        return;
+      }
+      
+      const sites = getSites();
+      if (sites.find(s => s.id === id)) {
+        toast("该网站ID已存在");
+        return;
+      }
+      
+      sites.push({
+        id, name, prefix: prefix || "AS", length, icon,
+        createdAt: Date.now()
+      });
+      saveSites(sites);
+      
+      $("#add-site-form").classList.remove("show");
+      $("#site-name").value = "";
+      $("#site-id").value = "";
+      $("#site-prefix").value = "";
+      $("#site-icon").value = "";
+      
+      renderSites();
+      toast("网站添加成功");
+    });
+  }
+  
+  function renderSites() {
+    const sites = getSites();
+    const list = $("#sites-list");
+    const empty = $("#empty-state");
+    
+    list.innerHTML = "";
+    
+    if (sites.length === 0) {
+      empty.style.display = "block";
+      return;
+    }
+    empty.style.display = "none";
+    
+    sites.forEach(site => {
+      const pool = getCodePool(site.id);
+      const bindMap = getBindMap(site.id);
+      const usedCount = pool.filter(c => bindMap[c]).length;
+      const freeCount = pool.length - usedCount;
+      
+      const card = document.createElement("div");
+      card.className = "site-card";
+      card.innerHTML = `
+        <div class="site-header">
+          <div class="site-info">
+            <h3>${site.icon} ${site.name}</h3>
+            <div class="site-id">ID: ${site.id}</div>
+            <div class="site-prefix">前缀: ${site.prefix} · 码长: ${site.length}位</div>
+          </div>
+          <div>
+            <button class="btn btn-danger btn-sm" data-action="delete-site" data-id="${site.id}">🗑 删除</button>
+          </div>
+        </div>
+        
+        <div class="site-stats">
+          <div class="stat-item">
+            <div class="stat-value">${pool.length}</div>
+            <div class="stat-label">总码数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" style="color: #dc2626;">${usedCount}</div>
+            <div class="stat-label">已绑定</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" style="color: var(--primary-deep);">${freeCount}</div>
+            <div class="stat-label">可使用</div>
+          </div>
+        </div>
+        
+        <div class="generate-section">
+          <div class="generate-row">
+            <span>批量生成：</span>
+            <input type="number" id="gen-count-${site.id}" min="1" max="1000" value="10" />
+            <span>个</span>
+            <button class="btn btn-primary" data-action="generate" data-id="${site.id}">⚡ 生成授权码</button>
+          </div>
+          <div id="gen-result-${site.id}" class="generate-result">
+            <div style="margin-bottom: 8px; font-weight: 600;">✅ 新生成的授权码：</div>
+            <div class="codes-list"></div>
+          </div>
+        </div>
+        
+        <div class="site-actions">
+          <button class="btn btn-secondary" data-action="view-codes" data-id="${site.id}">📋 查看全部授权码</button>
+          <button class="btn btn-secondary" data-action="export-site" data-id="${site.id}">📥 导出码池</button>
+          <button class="btn btn-secondary" data-action="clear-bind" data-id="${site.id}">🔄 清除所有绑定</button>
+        </div>
+      `;
+      list.appendChild(card);
+    });
+    
+    $$("[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const action = btn.dataset.action;
+        const id = btn.dataset.id;
+        handleAction(action, id);
+      });
+    });
+  }
+  
+  function handleAction(action, siteId) {
+    const sites = getSites();
+    const site = sites.find(s => s.id === siteId);
+    if (!site) return;
+    
+    if (action === "delete-site") {
+      showConfirm(`删除网站「${site.name}」`, `确定要删除网站「${site.name}」吗？这将同时删除该网站的所有授权码和绑定数据，此操作不可恢复。`, () => {
+        const updated = sites.filter(s => s.id !== siteId);
+        saveSites(updated);
+        localStorage.removeItem(CODE_POOL_KEY_PREFIX + siteId);
+        localStorage.removeItem(BIND_KEY_PREFIX + siteId);
+        renderSites();
+        toast("网站已删除");
+      });
+    } else if (action === "generate") {
+      const countInput = $(`#gen-count-${siteId}`);
+      const count = Math.min(Math.max(parseInt(countInput.value) || 10, 1), 1000);
+      const pool = getCodePool(siteId);
+      const existingSet = new Set(pool);
+      const newCodes = [];
+      
+      for (let i = 0; i < count; i++) {
+        let code;
+        let attempts = 0;
+        do {
+          code = generateCode(site.prefix, site.length);
+          attempts++;
+        } while (existingSet.has(code) && attempts < 100);
+        pool.push(code);
+        newCodes.push(code);
+      }
+      
+      saveCodePool(siteId, pool);
+      
+      const resultEl = $(`#gen-result-${siteId}`);
+      const listEl = resultEl.querySelector(".codes-list");
+      listEl.innerHTML = newCodes.map(c => 
+        `<span class="code-item"><span class="status-dot"></span>${c}</span>`
+      ).join("");
+      resultEl.classList.add("show");
+      
+      renderSites();
+      toast(`已生成 ${newCodes.length} 个授权码`);
+    } else if (action === "view-codes") {
+      viewCodes(site);
+    } else if (action === "export-site") {
+      const pool = getCodePool(siteId);
+      const bindMap = getBindMap(siteId);
+      const lines = pool.map(code => {
+        const status = bindMap[code] ? "已绑定" : "可使用";
+        const bindInfo = bindMap[code] ? `\t${bindMap[code].deviceId || ""}` : "";
+        return `${code}\t${status}${bindInfo}`;
+      });
+      downloadFile(`${site.id}-codes.tsv`, "授权码\t状态\t绑定设备\n" + lines.join("\n"));
+      toast("已导出码池");
+    } else if (action === "clear-bind") {
+      showConfirm(`清除「${site.name}」所有绑定`, `确定要清除网站「${site.name}」的所有设备绑定吗？这将释放所有已绑定的授权码。`, () => {
+        saveBindMap(siteId, {});
+        renderSites();
+        toast("已清除所有绑定");
+      });
+    }
+  }
+  
+  function viewCodes(site) {
+    const pool = getCodePool(site.id);
+    const bindMap = getBindMap(site.id);
+    const container = $("#codes-container");
+    
+    $("#search-code").value = "";
+    renderCodesList(pool, bindMap, site, "");
+    
+    $("#codes-modal").classList.add("show");
+    
+    const searchInput = $("#search-code");
+    searchInput.oninput = (e) => {
+      renderCodesList(pool, bindMap, site, e.target.value.toLowerCase());
+    };
+  }
+  
+  function renderCodesList(pool, bindMap, site, filter) {
+    const container = $("#codes-container");
+    const filtered = pool.filter(code => {
+      if (!filter) return true;
+      if (code.toLowerCase().includes(filter)) return true;
+      const bindInfo = bindMap[code];
+      if (bindInfo && bindInfo.deviceId && bindInfo.deviceId.toLowerCase().includes(filter)) return true;
+      return false;
+    });
+    
+    if (filtered.length === 0) {
+      container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--ink-soft);">没有找到匹配的授权码</div>`;
+      return;
+    }
+    
+    container.innerHTML = `
+      <div style="font-size: 12px; color: var(--ink-soft); margin-bottom: 8px;">共 ${filtered.length} 个授权码</div>
+      <div style="max-height: 300px; overflow-y: auto;">
+        ${filtered.map(code => {
+          const used = bindMap[code];
+          const bindInfo = used ? `data-id="${code}"` : "";
+          return `<span class="code-item${used ? ' used' : ''}" ${bindInfo}>
+            <span class="status-dot"></span>${code}
+            ${used ? '<span style="margin-left:4px;">🔒</span>' : ''}
+          </span>`;
+        }).join("")}
+      </div>
+    `;
+  }
+  
+  function downloadFile(filename, content) {
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  
+  function showConfirm(title, message, onConfirm) {
+    $("#confirm-title").textContent = title;
+    $("#confirm-message").textContent = message;
+    $("#confirm-modal").classList.add("show");
+    
+    const okBtn = $("#btn-confirm-ok");
+    const cancelBtn = $("#btn-confirm-cancel");
+    
+    const close = () => {
+      $("#confirm-modal").classList.remove("show");
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+    };
+    
+    okBtn.onclick = () => {
+      close();
+      onConfirm();
+    };
+    cancelBtn.onclick = close;
+  }
+  
+  function init() {
+    initAuth();
+    initSiteManagement();
+    
+    $("#btn-logout").addEventListener("click", logout);
+    
+    $("#btn-close-codes").addEventListener("click", () => {
+      $("#codes-modal").classList.remove("show");
+    });
+    
+    checkAuth();
+  }
+  
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>装饰风格对比</title>
+  <style>
+    :root {
+      --bg: #f4faf6;
+      --primary: #7bc49a;
+      --primary-dark: #5aa87c;
+      --primary-soft: #e0f2e8;
+      --ink: #3d4a42;
+      --ink-soft: #8a9a8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: linear-gradient(170deg, #f4faf6 0%, #e6f4ec 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      color: var(--ink);
+    }
+    h1 {
+      text-align: center;
+      color: var(--primary-dark);
+      margin-bottom: 40px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+    .demo-card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 8px 30px rgba(122, 196, 154, 0.15);
+      border: 1px solid #d8ead5;
+    }
+    .demo-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin: 0 0 4px;
+    }
+    .demo-desc {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin: 0 0 20px;
+    }
+    .preview-area {
+      background: linear-gradient(170deg, #f4faf6 0%, #e6f4ec 100%);
+      border-radius: 16px;
+      padding: 30px 20px;
+      text-align: center;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* 方案A: Emoji */
+    .demo-emoji {
+      font-size: 28px;
+      letter-spacing: 6px;
+      animation: emojiFloat 3s ease-in-out infinite;
+    }
+    @keyframes emojiFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+    .demo-emoji span { display: inline-block; }
+    .demo-emoji span:nth-child(2) { animation-delay: 0.2s; }
+    .demo-emoji span:nth-child(3) { animation-delay: 0.4s; }
+    .demo-emoji span:nth-child(4) { animation-delay: 0.6s; }
+    
+    /* 方案B: CSS小动物 */
+    .demo-animal {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .fox {
+      width: 50px;
+      height: 50px;
+      position: relative;
+      animation: animalFloat 3s ease-in-out infinite;
+    }
+    .fox-body {
+      width: 100%;
+      height: 100%;
+      background: #f5a623;
+      border-radius: 50% 50% 45% 45%;
+      position: relative;
+    }
+    .fox-ears::before, .fox-ears::after {
+      content: "";
+      position: absolute;
+      top: -8px;
+      width: 14px;
+      height: 18px;
+      background: #f5a623;
+      border-radius: 50% 50% 0 0;
+    }
+    .fox-ears::before { left: 6px; transform: rotate(-20deg); }
+    .fox-ears::after { right: 6px; transform: rotate(20deg); }
+    .fox-face::before {
+      content: "";
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+    }
+    .fox-eyes::before, .fox-eyes::after {
+      content: "";
+      position: absolute;
+      top: 16px;
+      width: 5px;
+      height: 5px;
+      background: #333;
+      border-radius: 50%;
+    }
+    .fox-eyes::before { left: 12px; }
+    .fox-eyes::after { right: 12px; }
+    
+    .rabbit {
+      width: 44px;
+      height: 50px;
+      position: relative;
+      animation: animalFloat 3s ease-in-out infinite 0.3s;
+    }
+    .rabbit-body {
+      width: 100%;
+      height: 40px;
+      background: #e8e8e8;
+      border-radius: 50% 50% 45% 45%;
+      position: absolute;
+      bottom: 0;
+    }
+    .rabbit-ears::before, .rabbit-ears::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      width: 8px;
+      height: 22px;
+      background: #e8e8e8;
+      border-radius: 50%;
+    }
+    .rabbit-ears::before { left: 8px; transform: rotate(-8deg); }
+    .rabbit-ears::after { right: 8px; transform: rotate(8deg); }
+    .rabbit-face::before, .rabbit-face::after {
+      content: "";
+      position: absolute;
+      bottom: 16px;
+      width: 4px;
+      height: 4px;
+      background: #333;
+      border-radius: 50%;
+    }
+    .rabbit-face::before { left: 12px; }
+    .rabbit-face::after { right: 12px; }
+    
+    .bear {
+      width: 46px;
+      height: 48px;
+      position: relative;
+      animation: animalFloat 3s ease-in-out infinite 0.6s;
+    }
+    .bear-body {
+      width: 100%;
+      height: 100%;
+      background: #c4956a;
+      border-radius: 50%;
+      position: relative;
+    }
+    .bear-ears::before, .bear-ears::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      width: 14px;
+      height: 14px;
+      background: #c4956a;
+      border-radius: 50%;
+    }
+    .bear-ears::before { left: -4px; }
+    .bear-ears::after { right: -4px; }
+    .bear-face::before, .bear-face::after {
+      content: "";
+      position: absolute;
+      top: 18px;
+      width: 5px;
+      height: 5px;
+      background: #333;
+      border-radius: 50%;
+    }
+    .bear-face::before { left: 12px; }
+    .bear-face::after { right: 12px; }
+    .bear-nose::before {
+      content: "";
+      position: absolute;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 7px;
+      background: #333;
+      border-radius: 50%;
+    }
+    
+    @keyframes animalFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    
+    /* 方案C: 柔和渐变装饰 */
+    .demo-gradient {
+      position: relative;
+      width: 160px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .grad-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(2px);
+      opacity: 0.7;
+    }
+    .grad-1 {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #a8e6c3, #7bc49a);
+      top: 10px;
+      left: 20px;
+      animation: gradFloat 4s ease-in-out infinite;
+    }
+    .grad-2 {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #b8d4e8, #a8c5e8);
+      top: 25px;
+      right: 20px;
+      animation: gradFloat 4s ease-in-out infinite 1s;
+    }
+    .grad-3 {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #f5d4b8, #e8c4a0);
+      bottom: 10px;
+      left: 50%;
+      animation: gradFloat 4s ease-in-out infinite 2s;
+    }
+    .grad-shape {
+      position: relative;
+      z-index: 2;
+      font-size: 24px;
+    }
+    @keyframes gradFloat {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-10px) scale(1.05); }
+    }
+    
+    .preview-label {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎨 装饰风格对比</h1>
+  <div class="container">
+    
+    <div class="demo-card">
+      <p class="demo-title">方案 A: Emoji 表情</p>
+      <p class="demo-desc">稳定可靠，系统原生支持</p>
+      <div class="preview-area">
+        <div class="demo-emoji">
+          <span>🌿</span><span>🦊</span><span>🌱</span><span>🐿️</span>
+        </div>
+        <p class="preview-label">简单直接，用户熟悉</p>
+      </div>
+    </div>
+    
+    <div class="demo-card">
+      <p class="demo-title">方案 B: CSS 小动物</p>
+      <p class="demo-desc">纯CSS绘制，可爱有主题感</p>
+      <div class="preview-area">
+        <div class="demo-animal">
+          <div class="fox">
+            <div class="fox-body"></div>
+            <div class="fox-ears"></div>
+            <div class="fox-face"></div>
+            <div class="fox-eyes"></div>
+          </div>
+          <div class="rabbit">
+            <div class="rabbit-body"></div>
+            <div class="rabbit-ears"></div>
+            <div class="rabbit-face"></div>
+          </div>
+          <div class="bear">
+            <div class="bear-body"></div>
+            <div class="bear-ears"></div>
+            <div class="bear-face"></div>
+            <div class="bear-nose"></div>
+          </div>
+        </div>
+        <p class="preview-label">与动物主题呼应，但代码复杂</p>
+      </div>
+    </div>
+    
+    <div class="demo-card">
+      <p class="demo-title">方案 C: 渐变光晕</p>
+      <p class="demo-desc">柔和模糊，现代简约</p>
+      <div class="preview-area">
+        <div class="demo-gradient">
+          <div class="grad-blob grad-1"></div>
+          <div class="grad-blob grad-2"></div>
+          <div class="grad-blob grad-3"></div>
+          <div class="grad-shape">✨</div>
+        </div>
+        <p class="preview-label">柔和渐变，氛围感强</p>
+      </div>
+    </div>
+    
+  </div>
+</body>
+</html>

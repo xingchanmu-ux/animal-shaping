@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSS小动物方案预览</title>
+  <style>
+    :root {
+      --bg: #f4faf6;
+      --primary: #7bc49a;
+      --primary-dark: #5aa87c;
+      --primary-soft: #e0f2e8;
+      --ink: #3d4a42;
+      --ink-soft: #8a9a8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: linear-gradient(170deg, #f4faf6 0%, #e6f4ec 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      color: var(--ink);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: var(--primary-dark);
+      margin: 0 0 8px;
+    }
+    .header p {
+      color: var(--ink-soft);
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    /* 模拟首页效果 */
+    .mock-home {
+      max-width: 380px;
+      margin: 0 auto 30px;
+      background: white;
+      border-radius: 24px;
+      padding: 30px 24px;
+      box-shadow: 0 8px 30px rgba(122, 196, 154, 0.12);
+      border: 1px solid #d8ead5;
+    }
+    
+    /* 首页顶部小动物组 */
+    .animal-group {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 8px;
+      margin-bottom: 20px;
+      height: 80px;
+    }
+    
+    /* 狐狸 */
+    .animal-fox {
+      width: 44px;
+      height: 50px;
+      position: relative;
+      animation: float 3s ease-in-out infinite;
+    }
+    .animal-fox .body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 38px;
+      background: linear-gradient(145deg, #ffa726, #f57c00);
+      border-radius: 50% 50% 40% 40%;
+    }
+    .animal-fox .ear-l, .animal-fox .ear-r {
+      position: absolute;
+      top: 0;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 16px solid #f57c00;
+    }
+    .animal-fox .ear-l { left: 2px; transform: rotate(-15deg); }
+    .animal-fox .ear-r { right: 2px; transform: rotate(15deg); }
+    .animal-fox .face {
+      position: absolute;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 18px;
+      background: #fff3e0;
+      border-radius: 50%;
+    }
+    .animal-fox .eye-l, .animal-fox .eye-r {
+      position: absolute;
+      top: 14px;
+      width: 5px;
+      height: 5px;
+      background: #3d4a42;
+      border-radius: 50%;
+    }
+    .animal-fox .eye-l { left: 10px; }
+    .animal-fox .eye-r { right: 10px; }
+    
+    /* 兔子 */
+    .animal-rabbit {
+      width: 36px;
+      height: 60px;
+      position: relative;
+      animation: float 3s ease-in-out infinite 0.3s;
+    }
+    .animal-rabbit .ear-l, .animal-rabbit .ear-r {
+      position: absolute;
+      top: 0;
+      width: 8px;
+      height: 22px;
+      background: #e8e8e8;
+      border-radius: 50% 50% 30% 30%;
+    }
+    .animal-rabbit .ear-l { left: 4px; transform: rotate(-10deg); }
+    .animal-rabbit .ear-r { right: 4px; transform: rotate(10deg); }
+    .animal-rabbit .body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 40px;
+      background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
+      border-radius: 50% 50% 40% 40%;
+    }
+    .animal-rabbit .eye-l, .animal-rabbit .eye-r {
+      position: absolute;
+      bottom: 16px;
+      width: 4px;
+      height: 4px;
+      background: #3d4a42;
+      border-radius: 50%;
+    }
+    .animal-rabbit .eye-l { left: 10px; }
+    .animal-rabbit .eye-r { right: 10px; }
+    
+    /* 松鼠 */
+    .animal-squirrel {
+      width: 42px;
+      height: 52px;
+      position: relative;
+      animation: float 3s ease-in-out infinite 0.6s;
+    }
+    .animal-squirrel .tail {
+      position: absolute;
+      right: -8px;
+      top: 8px;
+      width: 20px;
+      height: 30px;
+      background: linear-gradient(145deg, #d4a574, #b8855c);
+      border-radius: 50%;
+      transform: rotate(15deg);
+    }
+    .animal-squirrel .body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 40px;
+      background: linear-gradient(145deg, #d4a574, #b8855c);
+      border-radius: 50% 50% 40% 40%;
+    }
+    .animal-squirrel .head {
+      position: absolute;
+      top: 8px;
+      left: 4px;
+      width: 30px;
+      height: 28px;
+      background: linear-gradient(145deg, #d4a574, #b8855c);
+      border-radius: 50%;
+    }
+    .animal-squirrel .ear-l, .animal-squirrel .ear-r {
+      position: absolute;
+      top: 6px;
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 10px solid #b8855c;
+    }
+    .animal-squirrel .ear-l { left: 6px; }
+    .animal-squirrel .ear-r { right: 10px; }
+    .animal-squirrel .eye-l, .animal-squirrel .eye-r {
+      position: absolute;
+      top: 16px;
+      width: 4px;
+      height: 4px;
+      background: #3d3028;
+      border-radius: 50%;
+    }
+    .animal-squirrel .eye-l { left: 12px; }
+    .animal-squirrel .eye-r { left: 20px; }
+    
+    /* 小鹿 */
+    .animal-deer {
+      width: 40px;
+      height: 54px;
+      position: relative;
+      animation: float 3s ease-in-out infinite 0.9s;
+    }
+    .animal-deer .antler-l, .animal-deer .antler-r {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 14px;
+      background: #8b6914;
+    }
+    .animal-deer .antler-l { left: 6px; transform: rotate(-20deg); }
+    .animal-deer .antler-r { right: 6px; transform: rotate(20deg); }
+    .animal-deer .antler-l::before, .animal-deer .antler-r::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      width: 8px;
+      height: 2px;
+      background: #8b6914;
+    }
+    .animal-deer .antler-l::before { left: -6px; transform: rotate(-30deg); }
+    .animal-deer .antler-r::before { right: -6px; transform: rotate(30deg); }
+    .animal-deer .body {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      height: 42px;
+      background: linear-gradient(145deg, #c4956a, #a0784a);
+      border-radius: 50% 50% 40% 40%;
+    }
+    .animal-deer .eye-l, .animal-deer .eye-r {
+      position: absolute;
+      top: 20px;
+      width: 4px;
+      height: 4px;
+      background: #3d3028;
+      border-radius: 50%;
+    }
+    .animal-deer .eye-l { left: 10px; }
+    .animal-deer .eye-r { right: 10px; }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    
+    .mock-title {
+      font-size: 24px;
+      text-align: center;
+      margin: 0 0 6px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .mock-subtitle {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 14px;
+      margin: 0 0 20px;
+    }
+    
+    .info-box {
+      max-width: 380px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(122, 196, 154, 0.08);
+      border: 1px solid #d8ead5;
+    }
+    .info-box h3 {
+      margin: 0 0 8px;
+      color: var(--primary-dark);
+      font-size: 15px;
+    }
+    .info-box p {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🦊 CSS小动物方案</h1>
+    <p>纯CSS绘制的可爱小动物，与动物主题呼应</p>
+  </div>
+  
+  <!-- 模拟首页效果 -->
+  <div class="mock-home">
+    <!-- 小动物装饰组 -->
+    <div class="animal-group">
+      <div class="animal-fox">
+        <div class="ear-l"></div>
+        <div class="ear-r"></div>
+        <div class="body"></div>
+        <div class="face"></div>
+        <div class="eye-l"></div>
+        <div class="eye-r"></div>
+      </div>
+      
+      <div class="animal-rabbit">
+        <div class="ear-l"></div>
+        <div class="ear-r"></div>
+        <div class="body"></div>
+        <div class="eye-l"></div>
+        <div class="eye-r"></div>
+      </div>
+      
+      <div class="animal-squirrel">
+        <div class="tail"></div>
+        <div class="body"></div>
+        <div class="head"></div>
+        <div class="ear-l"></div>
+        <div class="ear-r"></div>
+        <div class="eye-l"></div>
+        <div class="eye-r"></div>
+      </div>
+      
+      <div class="animal-deer">
+        <div class="antler-l"></div>
+        <div class="antler-r"></div>
+        <div class="body"></div>
+        <div class="eye-l"></div>
+        <div class="eye-r"></div>
+      </div>
+    </div>
+    
+    <h2 class="mock-title">测测你的动物塑</h2>
+    <p class="mock-subtitle">动物性格意象小测验</p>
+  </div>
+  
+  <div class="info-box">
+    <h3>✨ 方案说明</h3>
+    <p>• 使用纯CSS绘制，无需额外资源加载</p>
+    <p>• 狐狸🦊、兔子🐰、松鼠🐿️、小鹿🦌 主题动物</p>
+    <p>• 有浮动动画，生动可爱</p>
+    <p>• 与"动物塑"主题完美呼应</p>
+    <p style="margin-top:10px;color:var(--ink-soft);">注意：代码较复杂，需约300行CSS</p>
+  </div>
+  
+  <div class="info-box" style="margin-top:16px;">
+    <h3>⚖️ 优缺点</h3>
+    <p><strong style="color:#5aa87c;">优点：</strong></p>
+    <p>• 视觉吸引力强，辨识度高</p>
+    <p>• 与主题完美契合</p>
+    <p>• 纯CSS实现，无额外依赖</p>
+    <p style="margin-top:8px;"><strong style="color:#c0392b;">缺点：</strong></p>
+    <p>• 代码复杂度高</p>
+    <p>• 不同浏览器渲染可能有差异</p>
+    <p>• 调试维护成本高</p>
+  </div>
+</body>
+</html>

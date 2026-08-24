@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>方案C - 渐变光晕预览</title>
+  <style>
+    :root {
+      --bg: #f4faf6;
+      --primary: #7bc49a;
+      --primary-dark: #5aa87c;
+      --primary-soft: #e0f2e8;
+      --ink: #3d4a42;
+      --ink-soft: #8a9a8e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 40px 20px;
+      background: linear-gradient(170deg, #f4faf6 0%, #e6f4ec 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+      color: var(--ink);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      color: var(--primary-dark);
+      margin: 0 0 8px;
+    }
+    .header p {
+      color: var(--ink-soft);
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    /* 模拟首页效果 - 方案C */
+    .mock-home {
+      max-width: 380px;
+      margin: 0 auto 30px;
+      background: white;
+      border-radius: 24px;
+      padding: 40px 24px;
+      box-shadow: 0 8px 30px rgba(122, 196, 154, 0.12);
+      border: 1px solid #d8ead5;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    /* 渐变光晕装饰区域 */
+    .gradient-decor {
+      position: relative;
+      height: 120px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* 背景光晕 */
+    .glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(15px);
+      opacity: 0.6;
+    }
+    .glow-1 {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #a8e6c3, #7bc49a);
+      top: 10px;
+      left: 30px;
+      animation: glowFloat 4s ease-in-out infinite;
+    }
+    .glow-2 {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #b8d4e8, #a8c5e8);
+      top: 30px;
+      right: 40px;
+      animation: glowFloat 4s ease-in-out infinite 1s;
+    }
+    .glow-3 {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #f5d4b8, #e8c4a0);
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: glowFloat 4s ease-in-out infinite 2s;
+    }
+    
+    /* 装饰线条/形状 */
+    .deco-shape {
+      position: absolute;
+      border-radius: 50%;
+    }
+    .deco-circle {
+      width: 12px;
+      height: 12px;
+      background: var(--primary);
+      top: 20px;
+      right: 80px;
+      opacity: 0.6;
+    }
+    .deco-ring {
+      width: 30px;
+      height: 30px;
+      border: 2px solid var(--primary);
+      border-radius: 50%;
+      bottom: 30px;
+      left: 60px;
+      opacity: 0.4;
+    }
+    .deco-line {
+      width: 40px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) rotate(30deg);
+      opacity: 0.5;
+    }
+    
+    /* 中心图标 */
+    .center-icon {
+      position: relative;
+      z-index: 10;
+      width: 60px;
+      height: 60px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      box-shadow: 0 4px 20px rgba(122, 196, 154, 0.3);
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes glowFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(5px, -5px) scale(1.05); }
+      66% { transform: translate(-5px, 5px) scale(0.95); }
+    }
+    
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    .mock-title {
+      font-size: 26px;
+      text-align: center;
+      margin: 0 0 6px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .mock-subtitle {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 14px;
+      margin: 0 0 20px;
+    }
+    
+    /* 加载页效果 */
+    .mock-loading {
+      max-width: 380px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 24px;
+      padding: 40px 24px;
+      box-shadow: 0 8px 30px rgba(122, 196, 154, 0.12);
+      border: 1px solid #d8ead5;
+      position: relative;
+      overflow: hidden;
+      text-align: center;
+    }
+    
+    .loading-glow-wrap {
+      position: relative;
+      height: 100px;
+      margin-bottom: 20px;
+    }
+    .loading-glow-1 {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #a8e6c3, #7bc49a);
+      border-radius: 50%;
+      filter: blur(10px);
+      top: 20px;
+      left: 50px;
+      animation: loadingPulse 1.5s ease-in-out infinite;
+    }
+    .loading-glow-2 {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #b8d4e8, #a8c5e8);
+      border-radius: 50%;
+      filter: blur(10px);
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: loadingPulse 1.5s ease-in-out infinite 0.3s;
+    }
+    .loading-glow-3 {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #f5d4b8, #e8c4a0);
+      border-radius: 50%;
+      filter: blur(10px);
+      top: 30px;
+      right: 50px;
+      animation: loadingPulse 1.5s ease-in-out infinite 0.6s;
+    }
+    
+    @keyframes loadingPulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 0.8; transform: scale(1.1); }
+    }
+    
+    .loading-icon {
+      position: relative;
+      z-index: 10;
+      font-size: 32px;
+      line-height: 100px;
+    }
+    
+    .loading-text {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--primary-dark);
+      margin: 0 0 6px;
+    }
+    .loading-sub {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin: 0;
+    }
+    
+    .info-box {
+      max-width: 380px;
+      margin: 20px auto 0;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(122, 196, 154, 0.08);
+      border: 1px solid #d8ead5;
+    }
+    .info-box h3 {
+      margin: 0 0 8px;
+      color: var(--primary-dark);
+      font-size: 15px;
+    }
+    .info-box p {
+      margin: 0 0 6px;
+      font-size: 13px;
+      color: var(--ink);
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>✨ 方案 C: 渐变光晕</h1>
+    <p>柔和模糊，现代简约，氛围感强</p>
+  </div>
+  
+  <!-- 首页效果 -->
+  <div class="mock-home">
+    <div class="gradient-decor">
+      <!-- 模糊光晕 -->
+      <div class="glow glow-1"></div>
+      <div class="glow glow-2"></div>
+      <div class="glow glow-3"></div>
+      
+      <!-- 装饰元素 -->
+      <div class="deco-shape deco-circle"></div>
+      <div class="deco-shape deco-ring"></div>
+      <div class="deco-shape deco-line"></div>
+      
+      <!-- 中心图标 -->
+      <div class="center-icon">🦊</div>
+    </div>
+    
+    <h2 class="mock-title">测测你的动物塑</h2>
+    <p class="mock-subtitle">动物性格意象小测验</p>
+  </div>
+  
+  <!-- 加载页效果 -->
+  <div class="mock-loading">
+    <div class="loading-glow-wrap">
+      <div class="loading-glow-1"></div>
+      <div class="loading-glow-2"></div>
+      <div class="loading-glow-3"></div>
+      <div class="loading-icon">✨</div>
+    </div>
+    <p class="loading-text">AI 正在解析你的动物塑…</p>
+    <p class="loading-sub">匹配 32 种动物意象中</p>
+  </div>
+  
+  <div class="info-box">
+    <h3>✨ 方案特点</h3>
+    <p>• 柔和模糊光晕，氛围感强</p>
+    <p>• 现代简约风格，视觉舒适</p>
+    <p>• 与 emoji 配合，简洁有效</p>
+    <p>• 代码简洁，易维护</p>
+  </div>
+</body>
+</html>
