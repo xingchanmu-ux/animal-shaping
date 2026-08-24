@@ -1,8 +1,5 @@
-# 短链接：访问 /animal 自动跳到带正确 site 参数的测评页
-/animal  /index.html?site=animal  301!
+# /animal 短链接 → 带 site 参数的测评页
+/animal  /index.html?site=animal  301
 
-# 裸首页访问：避免绕过授权，先跳到动物塑短链接入口
-# （如果以后有多个网站，把下面这行删掉/改成你想默认跳到的网站）
-/        /animal                   301!
-
-/*    /index.html  200
+# 首页 → /animal
+/        /animal                   301
