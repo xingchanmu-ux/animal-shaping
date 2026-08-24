@@ -4,6 +4,8 @@
  * 启动: node server.js
  */
 
+const BUILD_VERSION = "v2-auto-mode-20260824";
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -638,7 +640,7 @@ const server = http.createServer(async (req, res) => {
   // GET /api/health
   if (pathname === "/api/health" && req.method === "GET") {
     const totalBound = Object.keys(db.boundDevices || {}).length;
-    return sendJson(res, { ok: true, sites: Object.keys(db.sites || {}).length, boundDevices: totalBound });
+    return sendJson(res, { ok: true, sites: Object.keys(db.sites || {}).length, boundDevices: totalBound, version: BUILD_VERSION });
   }
   
   // 静态文件
