@@ -935,7 +935,7 @@ body::after {
       <input id="bind-input" class="modal-input" type="text" placeholder="请输入绑定密钥" autocomplete="off" />
       <p id="bind-error" class="modal-error" style="display:none"></p>
       <button id="bind-submit" class="btn btn-primary btn-block">绑定并验证</button>
-      <p class="modal-desc" style="font-size:12px; margin-top:10px;">绑定密钥由网站管理员提供</p>
+      <p id="bind-hint" class="modal-desc" style="font-size:12px; margin-top:10px;">激活密钥请私聊店主获取（新设备只用一次）</p>
     </div>
   </div>
 
@@ -951,9 +951,24 @@ body::after {
 
 // ===== API 配置 =====
 // 部署到 Railway 后，将下面的 URL 改为你的后端地址
-const API_BASE = window.location.hostname === "localhost" 
+const API_BASE = window.location.hostname === "localhost"
   ? ""  // 本地开发时使用相对路径
   : "https://animal-shaping-production.up.railway.app"; // 生产环境后端地址
+
+// ================================================================
+// 🧩 授权模式开关（你以后不用再问"能不能切回带密钥版本"：改下面一行就行）
+//
+// 模式 A = "auto"    新流程：用户只输授权码；授权码正确就自动绑定当前设备；
+//                     换设备再用同码就拒绝（一码一人，不需要激活密钥）。
+//                     注意：需要后端 server.js 也是新版（handleVerify 里有 autoBound 逻辑）。
+//
+// 模式 B = "bindKey" 旧流程：用户先输一次授权码，如果设备未绑定，
+//                     再弹"绑定密钥（DEVICE_BIND_KEY）"输入框，
+//                     设备通过后才能进题（顾客需要两次输入）。
+// ================================================================
+const AUTH_FLOW_MODE = "auto";
+// 仅 B 模式需要显示给顾客看的提示文字（你可以改成你 Railway Variables 里真实的 DEVICE_BIND_KEY）
+const BIND_KEY_HINT = "激活密钥请私聊店主获取（新设备只用一次）";
 
 // 从 URL 参数获取 API 地址 (可选)
 const URL_PARAMS = new URLSearchParams(window.location.search);
@@ -973,15 +988,19 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 /* 支持多网站码池 - 从URL参数读取siteId */
-let SITE_ID = URL_PARAMS.get("site") || "";
+let SITE_ID = (URL_PARAMS.get("site") || "").trim();
 const IS_MULTI_SITE = SITE_ID !== "";
 
-// 自动检测网站ID（如果URL没有site参数，尝试从后端获取唯一网站）
+// 用于前端展示/安全拦截：没有 site 参数时一律视为无效，避免绕过授权
+const PAGE_BLOCKED_NO_SITE = !SITE_ID;
+
+// 自动检测网站ID（仅在已有 site 参数时尝试做服务端对齐；无 site 参数直接拦截不检测）
 async function autoDetectSite() {
-  if (SITE_ID) return SITE_ID; // 已有site参数
-  
+  if (PAGE_BLOCKED_NO_SITE) return "";
+  if (SITE_ID) return SITE_ID;
+
   try {
-    // 尝试获取公开网站列表
+    // 尝试获取公开网站列表（仅用于兼容，不允许"无 site 参数自动挑第一个网站"绕过）
     const res = await apiFetch("/api/sites/public", { method: "GET" });
     if (res.ok) {
       const data = await res.json();
@@ -993,7 +1012,7 @@ async function autoDetectSite() {
   } catch (e) {
     // 忽略错误
   }
-  
+
   return "";
 }
 
@@ -1565,10 +1584,48 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
   const BIND_KEY = IS_MULTI_SITE ? `bind_${SITE_ID}` : "animal_shaping_bound";
 
   function getAuth() {
+    // 无 site 参数时，本地"已授权"缓存一律视为无效，防止绕过
+    if (PAGE_BLOCKED_NO_SITE || !SITE_ID) return null;
     try { return localStorage.getItem(AUTH_KEY); } catch (e) { return null; }
   }
   function setAuth(code) {
     try { localStorage.setItem(AUTH_KEY, code); } catch (e) { }
+  }
+  // 清掉授权缓存（用于：缓存里的授权码远程验证失败、过期、被解绑、或管理员撤销）
+  function clearAuth() {
+    try { localStorage.removeItem(AUTH_KEY); } catch (e) { }
+  }
+  // 清掉旧版遗留的"纯本地缓存"授权：没有经过后端验证的缓存一律不认，强制首次必须走远程
+  // 只在有合法 site 参数并且是第一次打开新版时执行一次
+  (function bootstrapPurgeLegacyAuth() {
+    if (PAGE_BLOCKED_NO_SITE || !SITE_ID) return;
+    try {
+      const GUARD_KEY = `${AUTH_KEY}_purged_v2`;
+      if (localStorage.getItem(GUARD_KEY) === "1") return;
+      // 没有远程验证过的痕迹（新字段后面后端校验成功才写），就直接清空旧缓存
+      // 这样能保证：用户从旧版残留的 animal_auth 不会"直接跳过授权"
+      const REMOTE_OK_MARK = `${AUTH_KEY}_remote_ok_v2`;
+      if (!localStorage.getItem(REMOTE_OK_MARK)) {
+        localStorage.removeItem(AUTH_KEY);
+      }
+      localStorage.setItem(GUARD_KEY, "1");
+    } catch (e) { }
+  })();
+  // 辅助：写入/撤销"远端确认通过"标记，配合上面对旧缓存的清理
+  function markRemoteVerified(code) {
+    try {
+      localStorage.setItem(`${AUTH_KEY}_remote_ok_v2`, "1");
+      localStorage.setItem(`${AUTH_KEY}_last_code`, (code || "").trim().toUpperCase());
+      const d = new Date();
+      localStorage.setItem(`${AUTH_KEY}_last_at`, d.toISOString());
+    } catch (e) { }
+  }
+  function revokeRemoteMark() {
+    try {
+      localStorage.removeItem(`${AUTH_KEY}_remote_ok_v2`);
+      localStorage.removeItem(`${AUTH_KEY}_last_code`);
+      localStorage.removeItem(`${AUTH_KEY}_last_at`);
+    } catch (e) { }
   }
 
   const DEVICE_KEY = IS_MULTI_SITE ? `${SITE_ID}_device_id` : "animal_shaping_device_id";
@@ -1683,6 +1740,10 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
   }
 
   function verifyCode(code) {
+    // 生产环境：禁用本地 AS 码池兜底，防止用户访问不带 ?site 的首页时绕过授权
+    // 本地开发（localhost）时保留原本地验证以便自测
+    const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+    if (!isLocal) return { ok: false, msg: "请使用完整链接（?site=xxx）访问" };
     const codeUpper = (code || "").trim().toUpperCase();
     if (!codeUpper) return { ok: false, msg: "请输入授权码" };
     const pool = getAdminPool();
@@ -1692,49 +1753,107 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
     return { ok: true };
   }
 
-  // 远程验证（调用后端API，包含设备绑定检查）
+  // 远程验证（调用后端API，包含设备绑定检查）——生产环境仅允许这条路径通过
   async function verifyCodeRemote(code) {
     const codeUpper = (code || "").trim().toUpperCase();
     if (!codeUpper) return { ok: false, msg: "请输入授权码" };
-    
+
+    if (PAGE_BLOCKED_NO_SITE || !SITE_ID) {
+      return { ok: false, msg: "请使用完整链接（?site=xxx）访问" };
+    }
+
     try {
-      // 使用全局SITE_ID（可能是自动检测到的）
-      const siteId = SITE_ID || URL_PARAMS.get("site") || "";
-      const apiUrl = siteId 
-        ? `/api/verify/sites/${encodeURIComponent(siteId)}`
-        : "/api/verify";
-      
+      // 必须带明确的 siteId，不再 fallback 到 /api/verify
+      const siteId = SITE_ID;
+      const apiUrl = `/api/verify/sites/${encodeURIComponent(siteId)}`;
       const deviceId = getDeviceId();
-      
+
       console.log("验证请求:", { code: codeUpper, siteId, deviceId });
-      
+
       const res = await apiFetch(apiUrl, {
         method: "POST",
         body: JSON.stringify({ code: codeUpper, deviceId })
       });
-      
+
       if (!res.ok) throw new Error("网络错误 (HTTP " + res.status + ")");
-      const data = await res.json();
-      
+      let data = await res.json();
       console.log("验证响应:", data);
-      
-      // 如果后端返回设备未授权，触发绑定流程
-      if (!data.ok && data.msg === "此设备未授权访问") {
-        return { ok: false, needBind: true, msg: data.msg };
+
+      // ============================================================
+      // 根据开关 AUTH_FLOW_MODE 处理"设备未绑定 / needBind"结果
+      // ============================================================
+      const isBackendNeedBind = (
+        !data.ok && (
+          (typeof data.msg === "string" && data.msg.indexOf("此设备未授权") >= 0) ||
+          (data.needBind === true)
+        )
+      );
+
+      if (isBackendNeedBind) {
+        // 模式 A(auto)：自动兜底绑定（静默），绑定成功后自动二次验证
+        if (AUTH_FLOW_MODE === "auto") {
+          console.warn("AUTO 模式：检测到设备未绑定，先静默 bind 再二次验证");
+
+          let bound = { ok: false, msg: "" };
+          // A-1：新版后端允许不传 bindKey 直接 bind
+          try { bound = await bindDevice(""); }
+          catch (e) { bound = { ok: false, msg: "网络错误" }; }
+
+          // A-2：兼容旧后端（用户没在 Railway Variables 自定义 DEVICE_BIND_KEY 时）
+          if (!bound.ok) {
+            try { bound = await bindDevice("DEVICE_BIND_2024"); }
+            catch (e) { bound = { ok: false, msg: "网络错误" }; }
+          }
+
+          if (bound.ok) {
+            const res2 = await apiFetch(apiUrl, {
+              method: "POST",
+              body: JSON.stringify({ code: codeUpper, deviceId })
+            });
+            if (!res2.ok) throw new Error("网络错误 (HTTP " + res2.status + ")");
+            data = await res2.json();
+            console.log("AUTO 模式：静默绑定后二次验证响应:", data);
+          } else {
+            return {
+              ok: false, needBind: false,
+              msg: (bound && bound.msg) ? ("绑定失败：" + bound.msg) : "绑定失败，请联系店主升级后端或改为 bindKey 模式"
+            };
+          }
+
+          // 二次验证后仍说"设备未授权"：不再循环
+          const stillNeedBind = !data.ok && (
+            (typeof data.msg === "string" && data.msg.indexOf("此设备未授权") >= 0) ||
+            (data.needBind === true)
+          );
+          if (stillNeedBind) {
+            return { ok: false, needBind: false, msg: "绑定后仍无法授权，请联系店主确认 Railway 后端已升级" };
+          }
+        } else {
+          // 模式 B(bindKey)：不做任何静默兜底，直接返回 needBind=true
+          // 外层 submitCode / checkAuthAndStart 会打开绑定密钥弹窗，让用户手动输入 DEVICE_BIND_KEY
+          return { ok: false, needBind: true, msg: data.msg || "此设备未授权访问" };
+        }
       }
-      
-      // 如果后端可用，保存当前网站的码到本地用于降级
-      if (data.ok && siteId) {
+
+      // 只在成功后保存码到本地，避免失败/无权限时写入本地造成后续绕过
+      if (data.ok) {
         saveAdminPool([codeUpper]);
+        markRemoteVerified(codeUpper);
       }
-      
+
       return data;
     } catch (e) {
       console.error("验证失败:", e);
-      return { ok: false, msg: "网络连接失败，请检查网络后重试" };
+      // 生产环境不降级使用本地码池，避免绕过
+      const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+      if (isLocal) {
+        const fallback = verifyCode(codeUpper);
+        if (fallback.ok) return fallback;
+      }
+      return { ok: false, msg: "网络连接失败，请检查网络或稍后再试" };
     }
   }
-  
+
   // 绑定设备
   async function bindDevice(bindKey) {
     const deviceId = getDeviceId();
@@ -1766,15 +1885,91 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
   }
 
   function initHome() {
-    $("#btn-start").addEventListener("click", checkAuthAndStart);
+    const startBtn = $("#btn-start");
+    if (PAGE_BLOCKED_NO_SITE || !SITE_ID) {
+      startBtn.disabled = true;
+      startBtn.style.opacity = "0.55";
+      startBtn.style.cursor = "not-allowed";
+      startBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openCodeModal("请使用完整链接访问：在网址末尾加上 ?site=animal");
+        // 禁用输入框，避免用户以为输码有用
+        const input = document.getElementById("code-input");
+        const submit = document.getElementById("code-submit");
+        if (input) {
+          input.disabled = true;
+          input.placeholder = "请打开带 ?site=xxx 的完整链接";
+        }
+        if (submit) {
+          submit.disabled = true;
+          submit.style.opacity = "0.5";
+        }
+      });
+      // 页面一打开就主动提示，避免用户误以为点"开始测试"能直接玩
+      window.addEventListener("load", () => {
+        openCodeModal("请使用完整链接访问：在网址末尾加上 ?site=animal");
+        const input = document.getElementById("code-input");
+        const submit = document.getElementById("code-submit");
+        if (input) {
+          input.disabled = true;
+          input.placeholder = "请打开带 ?site=xxx 的完整链接";
+        }
+        if (submit) {
+          submit.disabled = true;
+          submit.style.opacity = "0.5";
+        }
+      });
+      return;
+    }
+    startBtn.addEventListener("click", checkAuthAndStart);
   }
 
   function checkAuthAndStart() {
-    if (getAuth()) {
-      startQuiz();
-    } else {
+    // 每次点"开始测试"都必须：先用后端再验一次授权码 + 设备绑定
+    // 不再允许"本地有缓存就直接进题"，避免旧缓存绕过
+    const cachedCode = getAuth();
+    if (!cachedCode) {
       openCodeModal();
+      return;
     }
+    // 带按钮禁用 + toast 提示，避免重复点
+    const startBtn = $("#btn-start");
+    const originText = startBtn.textContent;
+    startBtn.disabled = true;
+    startBtn.textContent = "校验授权中…";
+    (async () => {
+      try {
+        const result = await verifyCodeRemote(cachedCode);
+        if (result.ok) {
+          markRemoteVerified(cachedCode);
+          startQuiz();
+          return;
+        }
+        // 注意：新后端（一码一人自动绑定版）已经不会再返回 needBind。
+        // 这里仅保留兼容：如果用户访问的是旧 Railway 实例、仍返回 needBind，我们也不再要求"激活密钥"，
+        // 直接清缓存重新打开授权码弹窗，让用户再点一次提交（后端会因为码对而自动绑定设备）。
+        if (result && result.needBind) {
+          clearAuth();
+          revokeRemoteMark();
+          openCodeModal("首次使用会自动为这台设备绑定，请再点一次『开始测试』输入授权码即可");
+          return;
+        }
+        // 其它失败：授权码失效 / 被管理员撤销 / 码与设备不匹配 / 后端报错
+        // 一律清缓存，让用户重新输授权码
+        clearAuth();
+        revokeRemoteMark();
+        openCodeModal(result && result.msg ? result.msg : "授权码已失效，请重新输入");
+      } catch (e) {
+        // 网络错：同样不让直接进题，清缓存重输（防止旧缓存被当成"免校验"）
+        clearAuth();
+        revokeRemoteMark();
+        openCodeModal("网络连接失败，请稍后重试并输入授权码");
+      } finally {
+        startBtn.disabled = false;
+        startBtn.textContent = originText;
+      }
+    })();
   }
 
   function openCodeModal(prefillError) {
@@ -1808,21 +2003,31 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
       const result = await verifyCodeRemote(code);
       btn.disabled = false;
       btn.textContent = "开始测试";
-      
-      // 设备未绑定，显示绑定界面
-      if (!result.ok && result.needBind) {
-        showBindModal(code);
-        return;
-      }
-      
+
       if (!result.ok) {
+        // bindKey 模式：设备未绑定就立刻弹绑定密钥输入框（顾客需要第二次输入）
+        if (result.needBind && AUTH_FLOW_MODE === "bindKey") {
+          showBindModal(code);
+          return;
+        }
+        // auto 模式或其它情况：如果仍出现 needBind，提示再点一次（极端兼容情况）
+        if (result.needBind) {
+          err.textContent = "首次使用自动绑定设备，请再点一次『开始测试』提交授权码";
+          err.style.display = "block";
+          return;
+        }
         err.textContent = result.msg || "授权失败";
         err.style.display = "block";
         return;
       }
       setAuth(code);
+      markRemoteVerified(code);
       closeCodeModal();
-      toast("授权成功，开始测试吧");
+      if (AUTH_FLOW_MODE === "auto") {
+        toast(result.autoBound ? "授权成功，已自动为本设备绑定～开始测试吧" : "授权成功，开始测试吧");
+      } else {
+        toast("授权成功，开始测试吧");
+      }
       startQuiz();
     } catch (e) {
       btn.disabled = false;
@@ -1832,14 +2037,16 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
     }
   }
   
-  // 显示绑定模态框
+  // 显示绑定模态框（仅 bindKey 模式会用到）
   function showBindModal(code) {
     const modal = document.getElementById("bind-modal");
     const input = document.getElementById("bind-input");
     const err = document.getElementById("bind-error");
+    const hint = document.getElementById("bind-hint");
     input.value = "";
     err.textContent = "";
     err.style.display = "none";
+    if (hint) hint.textContent = (typeof BIND_KEY_HINT === "string") ? BIND_KEY_HINT : "";
     modal.style.display = "flex";
     
     // 绑定后自动验证原授权码
@@ -2325,5 +2532,6 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
   document.addEventListener("DOMContentLoaded", init);
 })();
   </script>
+<!-- netlify-cache-bust: commit=069dd51, ts=2026-08-23T19:21:07.803624 -->
 </body>
 </html>

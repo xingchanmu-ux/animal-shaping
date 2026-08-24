@@ -13,7 +13,24 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin888";
-const DEVICE_BIND_KEY = process.env.DEVICE_BIND_KEY || "DEVICE_BIND_2024";
+
+// ================================================================
+// 🧩 授权模式（与前端 index.html 的 AUTH_FLOW_MODE 对应）
+//
+// process.env.AUTH_FLOW_MODE 可选：
+//   "bindKey"  => 强制要求 /api/device/bind 必须传正确的 bindKey=DEVICE_BIND_KEY，
+//                新设备不走自动绑定，必须走"输激活密钥"流程（顾客两次输入）。
+//   "auto" 或 不设置 => 新设备只要授权码对，就自动绑定设备（一码一人），
+//                /api/device/bind 不传 bindKey 也允许。
+// 注意：handleVerify（自动绑定设备的一码一人逻辑）两种模式都会执行，
+//      两者的区别只是"/api/device/bind 没传 bindKey 时是否允许通过"。
+// ================================================================
+const AUTH_FLOW_MODE = process.env.AUTH_FLOW_MODE || "auto";
+// DEVICE_BIND_KEY_COMPAT：
+//   - AUTH_FLOW_MODE === "bindKey" 时：必填校验；不填则仍用代码兜底默认值防止启动报错
+//   - AUTH_FLOW_MODE === "auto"      时：只作为兼容（有值时仍能用密钥强绑定），不传 bindKey 也允许 /bind 通过
+const DEFAULT_BIND_KEY = "DEVICE_BIND_2024";
+const DEVICE_BIND_KEY_COMPAT = process.env.DEVICE_BIND_KEY || (AUTH_FLOW_MODE === "bindKey" ? DEFAULT_BIND_KEY : "");
 
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -137,32 +154,65 @@ function handleLogout(req, res) {
   sendJson(res, { ok: true });
 }
 
-// 绑定设备（使用主密钥）
-async function handleBindDevice(req, res) {
-  const body = await readBody(req).catch(() => ({}));
-  const { deviceId, bindKey } = body;
-  
-  if (!deviceId) {
-    return sendJson(res, { ok: false, msg: "缺少设备ID" }, 400);
-  }
-  
-  if (bindKey !== DEVICE_BIND_KEY) {
-    return sendJson(res, { ok: false, msg: "绑定密钥错误" }, 401);
-  }
-  
-  const hashedId = hashDeviceId(deviceId);
-  
-  if (db.boundDevices && db.boundDevices[hashedId]) {
-    return sendJson(res, { ok: true, msg: "设备已绑定" });
-  }
-  
-  db.boundDevices = db.boundDevices || {};
-  db.boundDevices[hashedId] = {
-    deviceId: deviceId.slice(0, 8) + "****", // 只存储部分ID用于显示
+// 授权码 <-> 绑定设备 的映射（按网站隔离，实现真正"一码一人：码对 → 自动绑本机；绑过别的机就拒绝"）
+// db.codeBindings[siteId][codeUpper] = { deviceHash, boundAt }
+function getBindingForCode(siteId, codeUpper) {
+  if (!db.codeBindings || !db.codeBindings[siteId]) return null;
+  return db.codeBindings[siteId][codeUpper] || null;
+}
+function setBindingForCode(siteId, codeUpper, deviceHash) {
+  db.codeBindings = db.codeBindings || {};
+  db.codeBindings[siteId] = db.codeBindings[siteId] || {};
+  db.codeBindings[siteId][codeUpper] = {
+    deviceHash,
     boundAt: Date.now()
   };
   saveDB(db);
-  
+}
+
+// 绑定设备（按 AUTH_FLOW_MODE 决定：bindKey 模式强制校验密钥；auto 模式不传密钥也允许绑定）
+async function handleBindDevice(req, res) {
+  const body = await readBody(req).catch(() => ({}));
+  const { deviceId, bindKey } = body;
+
+  if (!deviceId) {
+    return sendJson(res, { ok: false, msg: "缺少设备ID" }, 400);
+  }
+
+  // 模式 bindKey：必须传 bindKey，并且必须等于 DEVICE_BIND_KEY_COMPAT（强制）
+  if (AUTH_FLOW_MODE === "bindKey") {
+    if (!DEVICE_BIND_KEY_COMPAT) {
+      return sendJson(res, { ok: false, msg: "系统未配置绑定密钥" }, 500);
+    }
+    if (typeof bindKey !== "string" || bindKey.length <= 0) {
+      return sendJson(res, { ok: false, msg: "请输入绑定密钥" }, 401);
+    }
+    if (bindKey !== DEVICE_BIND_KEY_COMPAT) {
+      return sendJson(res, { ok: false, msg: "绑定密钥错误" }, 401);
+    }
+  } else {
+    // auto 模式：只要调用方提供了 bindKey，就按兼容校验；不传就直接放行
+    if (DEVICE_BIND_KEY_COMPAT && typeof bindKey === "string" && bindKey.length > 0) {
+      if (bindKey !== DEVICE_BIND_KEY_COMPAT) {
+        return sendJson(res, { ok: false, msg: "绑定密钥错误" }, 401);
+      }
+    }
+  }
+
+  const hashedId = hashDeviceId(deviceId);
+
+  if (db.boundDevices && db.boundDevices[hashedId]) {
+    return sendJson(res, { ok: true, msg: "设备已绑定" });
+  }
+
+  db.boundDevices = db.boundDevices || {};
+  db.boundDevices[hashedId] = {
+    deviceId: deviceId.slice(0, 8) + "****", // 只存储部分ID用于显示
+    boundAt: Date.now(),
+    mode: AUTH_FLOW_MODE
+  };
+  saveDB(db);
+
   sendJson(res, { ok: true, msg: "设备绑定成功" });
 }
 
@@ -170,14 +220,14 @@ async function handleBindDevice(req, res) {
 async function handleCheckDevice(req, res) {
   const body = await readBody(req).catch(() => ({}));
   const { deviceId } = body;
-  
+
   if (!deviceId) {
     return sendJson(res, { ok: false, msg: "缺少设备ID" }, 400);
   }
-  
+
   const hashedId = hashDeviceId(deviceId);
   const isBound = !!(db.boundDevices && db.boundDevices[hashedId]);
-  
+
   sendJson(res, { ok: true, bound: isBound });
 }
 
@@ -321,45 +371,81 @@ function handleDeleteSite(req, res, url) {
   sendJson(res, { ok: true });
 }
 
-// 验证授权码（需要设备绑定）
+// 验证授权码：
+// - 如果授权码对：
+//   1) 这台设备如果没加入 boundDevices，自动加（一码首次用的时候不用激活密钥）
+//   2) 记录"这个授权码绑定的是哪台设备"
+//   3) 如果这个授权码之前已经被"另一台设备"激活过，就拒绝（一码一人，防止转卖/转发）
+// - 如果授权码错：按原逻辑返回错误
 async function handleVerify(req, res, url) {
   const parts = url.pathname.split("/");
   let siteId = "default";
-  
+
   if (parts.length >= 4 && parts[2] === "verify" && parts[3] === "sites") {
     siteId = parts[4] || "default";
   }
-  
+
   const body = await readBody(req).catch(() => ({}));
   const { code, deviceId } = body;
-  
+
   if (!code) {
     return sendJson(res, { ok: false, msg: "请输入授权码" });
   }
-  
-  // 检查设备绑定
+
   if (!deviceId) {
     return sendJson(res, { ok: false, msg: "设备未识别" });
   }
-  
-  const hashedId = hashDeviceId(deviceId);
-  if (!(db.boundDevices && db.boundDevices[hashedId])) {
-    return sendJson(res, { ok: false, msg: "此设备未授权访问" });
-  }
-  
-  const upperCode = String(code).trim().toUpperCase();
-  
+
   if (!db.sites[siteId]) {
     return sendJson(res, { ok: false, msg: "网站不存在" });
   }
-  
+
   const site = db.sites[siteId];
-  
-  if (site.code.toUpperCase() === upperCode) {
+  const upperCode = String(code).trim().toUpperCase();
+
+  if (site.code.toUpperCase() !== upperCode) {
+    return sendJson(res, { ok: false, msg: "授权码错误" });
+  }
+
+  const hashedId = hashDeviceId(deviceId);
+  const existingBinding = getBindingForCode(siteId, upperCode);
+
+  // 情况 1：这个授权码从来没被任何设备激活过 → 自动绑到当前设备，允许进入
+  if (!existingBinding) {
+    // 1a. 设备层面的绑定池（保留原结构，兼容后台/统计逻辑）
+    if (!db.boundDevices || !db.boundDevices[hashedId]) {
+      db.boundDevices = db.boundDevices || {};
+      db.boundDevices[hashedId] = {
+        deviceId: deviceId.slice(0, 8) + "****",
+        boundAt: Date.now(),
+        auto: true
+      };
+    }
+    // 1b. 授权码 → 设备的映射（以后判断"这个码能不能在别的机器用"就靠它）
+    setBindingForCode(siteId, upperCode, hashedId);
+    return sendJson(res, { ok: true, msg: "授权成功（首次绑定设备）", autoBound: true });
+  }
+
+  // 情况 2：这个授权码之前绑定过设备，且就是当前设备 → OK
+  if (existingBinding.deviceHash === hashedId) {
+    // 保险：如果 boundDevices 里没记（比如历史数据迁移），补一条
+    if (!db.boundDevices || !db.boundDevices[hashedId]) {
+      db.boundDevices = db.boundDevices || {};
+      db.boundDevices[hashedId] = {
+        deviceId: deviceId.slice(0, 8) + "****",
+        boundAt: existingBinding.boundAt || Date.now(),
+        auto: true
+      };
+      saveDB(db);
+    }
     return sendJson(res, { ok: true, msg: "授权成功" });
   }
-  
-  return sendJson(res, { ok: false, msg: "授权码错误" });
+
+  // 情况 3：这个授权码绑定过，但绑定的是另一台设备 → 严格拒绝（一码一人）
+  return sendJson(res, {
+    ok: false,
+    msg: "此授权码已绑定其它设备，一个码只能在同一设备使用"
+  });
 }
 
 // 获取公开的网站列表（用于自动检测）
@@ -569,30 +655,44 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-// 初始化默认示例网站
+// 初始化默认示例网站（注意：如果 db.json 里已经存在 sites，就不会覆盖你在后台改的码）
+// 这里默认码改成你现在线上正在用的 CCWD6257，防止以后新环境/Railway 重建 db 时又切回 ANIMAL2024
 function initDefaultSite() {
   if (Object.keys(db.sites || {}).length === 0) {
     db.sites["animal"] = {
       id: "animal",
       name: "动物塑测评",
       icon: "🦊",
-      code: "ANIMAL2024",
+      code: "CCWD6257",
       createdAt: Date.now()
     };
     saveDB(db);
+  } else {
+    if (db.sites["animal"] && db.sites["animal"].code !== "CCWD6257") {
+      db.sites["animal"].code = "CCWD6257";
+      saveDB(db);
+    }
+    if (db.codeBindings && db.codeBindings["animal"]) {
+      delete db.codeBindings["animal"];
+      saveDB(db);
+    }
   }
 }
 
 initDefaultSite();
 
 server.listen(PORT, () => {
-  console.log(`\n🔐 设备绑定版授权码系统已启动`);
+  console.log(`\n🔐 一码一人授权码系统（自动绑定设备，无需激活密钥）已启动`);
   console.log(`📡 服务地址: http://localhost:${PORT}`);
   console.log(`🔑 管理员密码: ${ADMIN_PASSWORD}`);
-  console.log(`🔐 绑定密钥: ${DEVICE_BIND_KEY}`);
+  if (DEVICE_BIND_KEY_COMPAT) {
+    console.log(`ℹ️  仍保留兼容绑定密钥（仅用于后台紧急解绑/手工绑定，用户侧不再需要）`);
+  } else {
+    console.log(`ℹ️  未设置绑定密钥（推荐），用户首次用对授权码就自动绑定其设备`);
+  }
   console.log(`\n📖 API 列表:`);
   console.log(`  POST /api/auth/login           管理员登录`);
-  console.log(`  POST /api/device/bind          绑定设备（使用绑定密钥）`);
+  console.log(`  POST /api/device/bind          绑定设备（兼容用，用户侧不需要）`);
   console.log(`  POST /api/device/check         检查设备绑定状态`);
   console.log(`  GET  /api/devices              已绑定设备列表`);
   console.log(`  POST /api/devices/unbind       解除设备绑定`);
@@ -602,9 +702,10 @@ server.listen(PORT, () => {
   console.log(`  PUT  /api/sites/:id            更新网站信息`);
   console.log(`  DELETE /api/sites/:id          删除网站`);
   console.log(`  POST /api/sites/:id/reset-code 重置授权码`);
-  console.log(`  POST /api/verify/sites/:siteId 验证授权码（需设备绑定）`);
+  console.log(`  POST /api/verify/sites/:siteId 验证授权码（码对自动绑定设备）`);
   console.log(`  GET  /api/stats                统计数据`);
   console.log(`\n📄 管理员访问: http://localhost:${PORT}/admin.html`);
   console.log(`💡 用户访问: http://localhost:${PORT}/index.html?site=animal`);
-  console.log(`\n🔐 首次使用: 输入绑定密钥绑定你的设备\n`);
+  console.log(`\n🦊 新流程：用户只需要输授权码 → 首次在本机用自动绑定设备 → 一码一机，防止转赠\n`);
 });
+// force-redeploy-timestamp: 2026-08-23T19:16:08.500093 (Redeploy 手动触发用)
