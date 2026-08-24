@@ -1760,8 +1760,81 @@ window.ANIMAL_DATA = { QUESTIONS, ANIMALS, MATCH_LEVELS, DISCLAIMER };
     return { ok: true };
   }
 
+// 纯前端授权模式 - 不需要后端
+// 授权码存储在 localStorage，每个码绑定一个设备
+const PURE_FRONTEND_MODE = true;
+
+// 默认授权码池（可以通过 admin.html 生成新码）
+const DEFAULT_CODE_POOL = ["CCWD6257"];
+
+// 获取授权码池
+function getFrontendCodePool() {
+  try {
+    const pool = localStorage.getItem("frontend_code_pool");
+    if (pool) {
+      const arr = JSON.parse(pool);
+      if (Array.isArray(arr) && arr.length > 0) return arr;
+    }
+  } catch (e) { }
+  // 初始化默认码池
+  localStorage.setItem("frontend_code_pool", JSON.stringify(DEFAULT_CODE_POOL));
+  return DEFAULT_CODE_POOL;
+}
+
+// 绑定设备记录：{ code: deviceId }
+function getBindRecords() {
+  try {
+    const records = localStorage.getItem("frontend_bind_records");
+    if (records) return JSON.parse(records);
+  } catch (e) { }
+  return {};
+}
+
+function saveBindRecords(records) {
+  try {
+    localStorage.setItem("frontend_bind_records", JSON.stringify(records));
+  } catch (e) { }
+}
+
+// 纯前端验证
+function verifyCodeFrontend(code) {
+  const codeUpper = (code || "").trim().toUpperCase();
+  if (!codeUpper) return { ok: false, msg: "请输入授权码" };
+
+  if (PAGE_BLOCKED_NO_SITE || !SITE_ID) {
+    return { ok: false, msg: "请使用完整链接（?site=xxx）访问" };
+  }
+
+  const pool = getFrontendCodePool();
+  if (!pool.includes(codeUpper)) {
+    return { ok: false, msg: "授权码不存在或无效" };
+  }
+
+  const deviceId = getDeviceId();
+  const records = getBindRecords();
+
+  // 检查该码是否已绑定
+  if (records[codeUpper]) {
+    // 已绑定，检查是否是当前设备
+    if (records[codeUpper] === deviceId) {
+      return { ok: true, msg: "验证成功" };
+    } else {
+      return { ok: false, msg: "此授权码已绑定其他设备，无法在此设备使用" };
+    }
+  } else {
+    // 未绑定，自动绑定
+    records[codeUpper] = deviceId;
+    saveBindRecords(records);
+    return { ok: true, msg: "验证成功，设备已绑定" };
+  }
+}
+
   // 远程验证（调用后端API，包含设备绑定检查）——生产环境仅允许这条路径通过
   async function verifyCodeRemote(code) {
+    // 如果是纯前端模式，直接走本地验证
+    if (PURE_FRONTEND_MODE) {
+      return verifyCodeFrontend(code);
+    }
     const codeUpper = (code || "").trim().toUpperCase();
     if (!codeUpper) return { ok: false, msg: "请输入授权码" };
 
