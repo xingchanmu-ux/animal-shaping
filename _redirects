@@ -1,5 +1,1 @@
-# /animal 短链接 → 带 site 参数的测评页
-/animal  /index.html?site=animal  301
-
-# 首页 → /animal
-/        /animal                   301
+# disabled
